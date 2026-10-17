@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>侏罗纪公园：绿甲龙群龙大战（巨幕版）</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      background: #1b3b1e;
+      font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+      color: #fff;
+      overflow: hidden;
+    }
+    #game-wrapper {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: radial-gradient(circle at center, #3b6936 0%, #244721 75%, #162e14 100%);
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .hud {
+      position: absolute;
+      top: 14px;
+      left: 18px;
+      right: 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 5;
+      gap: 12px;
+      flex-wrap: wrap;
+      pointer-events: none;
+    }
+    .hud-box {
+      background: rgba(14, 28, 16, 0.85);
+      border: 2px solid #8ce99a;
+      border-radius: 14px;
+      padding: 10px 18px;
+      font-size: 19px;
+      font-weight: bold;
+      display: flex;
+      gap: 18px;
+      align-items: center;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.45);
+      pointer-events: auto;
+    }
+    .score-val {
+      color: #ffd954;
+      font-size: 25px;
+    }
+    .fullscreen-btn {
+      background: #2b8a3e;
+      color: #fff;
+      border: 2px solid #b2f2bb;
+      border-radius: 10px;
+      padding: 6px 14px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .fullscreen-btn:hover {
+      background: #37b24d;
+    }
+    .action-bar {
+      position: absolute;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 18px;
+      z-index: 5;
+    }
+    .skill-btn {
+      background: linear-gradient(180deg, #ff922b 0%, #d9480f 100%);
+      color: #fff;
+      border: 3px solid #ffd8a8;
+      border-radius: 36px;
+      padding: 12px 28px;
+      font-size: 20px;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 5px 0 #7f2704, 0 8px 18px rgba(0,0,0,0.5);
+    }
+    .skill-btn:active {
+      transform: translateY(3px);
+    }
+    .skill-btn.dash {
+      background: linear-gradient(180deg, #339af0 0%, #1864ab 100%);
+      border-color: #a5d8ff;
+      box-shadow: 0 5px 0 #0b3d6e, 0 8px 18px rgba(0,0,0,0.5);
+    }
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 22, 13, 0.92);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      padding: 24px;
+      text-align: center;
+      overflow-y: auto;
+    }
+    .overlay.hidden {
+      display: none;
+    }
+    h1 {
+      font-size: 48px;
+      margin: 0 0 10px 0;
+      color: #ffe066;
+      text-shadow: 0 4px 0 #6e4715, 0 6px 14px rgba(0,0,0,0.6);
+    }
+    .subtitle {
+      font-size: 19px;
+      color: #c7e8b5;
+      margin-bottom: 16px;
+    }
+    .diff-selector {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .diff-btn {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      border: 2px solid #74c69d;
+      border-radius: 12px;
+      padding: 10px 22px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .diff-btn.active {
+      background: #40c057;
+      color: #081c15;
+      border-color: #fff;
+      transform: scale(1.06);
+      box-shadow: 0 0 16px rgba(64, 192, 87, 0.7);
+    }
+    .legend {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 1200px;
+    }
+    .legend-card {
+      background: rgba(255, 255, 255, 0.08);
+      border: 2px solid rgba(255, 255, 255, 0.25);
+      border-radius: 14px;
+      padding: 12px 16px;
+      width: 220px;
+      text-align: center;
+    }
+    .legend-card .icon {
+      font-size: 36px;
+      margin-bottom: 4px;
+    }
+    .legend-card h3 {
+      margin: 4px 0;
+      font-size: 18px;
+    }
+    .legend-card p {
+      margin: 4px 0 0;
+      font-size: 14px;
+      color: #e9ecef;
+      line-height: 1.45;
+    }
+    .card-good { border-color: #63e6be; background: rgba(43, 138, 62, 0.32); }
+    .card-poison { border-color: #da77f2; background: rgba(134, 46, 156, 0.32); }
+    .card-club { border-color: #ffa94d; background: rgba(217, 72, 15, 0.32); }
+    .card-danger { border-color: #ff6b6b; background: rgba(190, 42, 42, 0.32); }
+    .card-friend { border-color: #74c0fc; background: rgba(24, 100, 171, 0.32); }
+    .btn {
+      background: linear-gradient(180deg, #ffd43b 0%, #f08c00 100%);
+      color: #2b1700;
+      border: 3px solid #fff3bf;
+      border-radius: 50px;
+      padding: 14px 52px;
+      font-size: 26px;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 6px 0 #9c5100, 0 12px 24px rgba(0,0,0,0.5);
+    }
+    .btn:hover {
+      transform: scale(1.05);
+    }
+    .controls-tip {
+      margin-top: 16px;
+      font-size: 16px;
+      color: #d8f3dc;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="game-wrapper">
+    <!-- 顶部状态栏 -->
+    <div class="hud">
+      <div class="hud-box">
+        <span>🌿 分数：<span id="score" class="score-val">0</span> / <span id="goal-score">30</span></span>
+        <span>🦖 击败恐龙：<span id="kill-count" class="score-val">0</span> / <span id="goal-kills">4</span></span>
+        <span id="stealth-status" style="color:#ffd43b;">👀 暴露在外</span>
+      </div>
+      <div class="hud-box">
+        <span>⏳ 新恐龙倒计时：<span id="next-spawn-timer" style="color:#ff8787;">10</span>秒</span>
+        <span>难度：<span id="hud-diff" style="color:#69db7c;">普通</span></span>
+        <button class="fullscreen-btn" id="fs-btn">⛶ 全屏放大</button>
+      </div>
+    </div>
+
+    <!-- 底部技能栏 -->
+    <div class="action-bar">
+      <button class="skill-btn" id="club-btn">🔨 旋风尾锤攻击 (空格键 / J键 / 鼠标右键)</button>
+      <button class="skill-btn dash" id="dash-btn">⚡ 护甲冲刺加速 (Shift键 / K键)</button>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- 开始界面 -->
+    <div id="start-screen" class="overlay">
+      <h1>🦖 侏罗纪公园：绿甲龙群龙大战</h1>
+      <div class="subtitle">全屏巨幕版！6种史前恐龙登场：霸王龙、棘龙、双冠毒龙、迅猛龙、翼龙，还有友军三角龙！</div>
+
+      <div style="margin-bottom:8px; font-weight:bold; color:#ffe066; font-size:18px;">👇 选择游戏难度：</div>
+      <div class="diff-selector">
+        <button class="diff-btn" data-diff="easy">🌱 简单模式 (慢速·易通关)</button>
+        <button class="diff-btn active" data-diff="normal">⚔️ 普通模式 (标准挑战)</button>
+        <button class="diff-btn" data-diff="hard">🔥 困难模式 (群龙围攻)</button>
+        <button class="diff-btn" data-diff="hell">💀 恐龙大狂潮 (地狱级)</button>
+      </div>
+
+      <div class="legend">
+        <div class="legend-card card-good">
+          <div class="icon">🌿🍎</div>
+          <h3 style="color:#69db7c;">无毒植物 & 毒植物</h3>
+          <p>🌿无毒蕨草 <b>+1分</b><br>🍎金色远古果 <b>+3分</b><br>🍄紫毒蘑菇 <b>-2分</b> (跌到-5中毒死亡)</p>
+        </div>
+        <div class="legend-card card-club">
+          <div class="icon">🛡️🌳</div>
+          <h3 style="color:#ffa94d;">绿甲龙尾锤 & 草丛</h3>
+          <p>按<b>空格键/右键</b>甩尾锤击飞恐龙<br>躲进<b>大草丛</b>触发绿色保护色隐身，所有肉食恐龙都找不到你！</p>
+        </div>
+        <div class="legend-card card-danger">
+          <div class="icon">🦖🐊</div>
+          <h3 style="color:#ff8787;">霸王龙 & 巨型棘龙</h3>
+          <p><b>霸王龙</b>(2~3血，击败+5分)<br><b>背帆棘龙</b>(巨型BOSS，3~4血，击败+8分)</p>
+        </div>
+        <div class="legend-card card-poison">
+          <div class="icon">🦎🦅</div>
+          <h3 style="color:#e599f7;">双冠毒龙 & 迅猛龙 & 翼龙</h3>
+          <p><b>双冠龙</b>会远程喷毒液(-2分)<br><b>迅猛龙</b>跑得快(1血，+3分)<br><b>天空翼龙</b>飞掠突袭(1血，+4分)</p>
+        </div>
+        <div class="legend-card card-friend">
+          <div class="icon">🦕</div>
+          <h3 style="color:#74c0fc;">友军：三角龙伙伴</h3>
+          <p>食草恐龙好朋友！不仅不会伤害你，还会<b>帮你顶飞靠近的肉食恐龙</b>并掉落金果！</p>
+        </div>
+      </div>
+
+      <button class="btn" id="start-btn">开始巨幕冒险</button>
+      <div class="controls-tip">
+        🎮 <b>移动</b>：方向键 (↑↓←→) / WASD / 按住鼠标左键拖动 &nbsp;|&nbsp;
+        🔨 <b>尾锤攻击</b>：<b>空格键 / J键 / 鼠标右键</b>
+      </div>
+    </div>
+
+    <!-- 结束/通关界面 -->
+    <div id="gameover-screen" class="overlay hidden">
+      <h1 id="end-title" style="color:#ff6b6b;">💥 小甲龙被恐龙抓住了！</h1>
+      <div class="subtitle" id="end-reason" style="font-size:22px; color:#ffd8a8; margin-bottom:14px;"></div>
+      <div style="font-size:26px; color:#fff; margin-bottom:22px;">
+        最终得分：<span id="final-score" class="score-val">0</span> &nbsp;|&nbsp;
+        击败肉食恐龙：<span id="final-kills" class="score-val">0</span> 只
+      </div>
+      <div style="margin-bottom:12px; font-weight:bold; color:#ffe066; font-size:18px;">切换下一局难度：</div>
+      <div class="diff-selector">
+        <button class="diff-btn" data-diff="easy">🌱 简单模式</button>
+        <button class="diff-btn active" data-diff="normal">⚔️ 普通模式</button>
+        <button class="diff-btn" data-diff="hard">🔥 困难模式</button>
+        <button class="diff-btn" data-diff="hell">💀 恐龙大狂潮</button>
+      </div>
+      <button class="btn" id="restart-btn">再来一局</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // 动态自适应全屏窗口大小
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // 全屏切换按钮
+    document.getElementById('fs-btn').addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    });
+
+    const scoreEl = document.getElementById('score');
+    const goalScoreEl = document.getElementById('goal-score');
+    const killCountEl = document.getElementById('kill-count');
+    const goalKillsEl = document.getElementById('goal-kills');
+    const stealthStatusEl = document.getElementById('stealth-status');
+    const nextSpawnTimerEl = document.getElementById('next-spawn-timer');
+    const hudDiffEl = document.getElementById('hud-diff');
+
+    const startScreen = document.getElementById('start-screen');
+    const gameoverScreen = document.getElementById('gameover-screen');
+    const endTitleEl = document.getElementById('end-title');
+    const endReasonEl = document.getElementById('end-reason');
+    const finalScoreEl = document.getElementById('final-score');
+    const finalKillsEl = document.getElementById('final-kills');
+
+    const startBtn = document.getElementById('start-btn');
+    const restartBtn = document.getElementById('restart-btn');
+    const clubBtn = document.getElementById('club-btn');
+    const dashBtn = document.getElementById('dash-btn');
+
+    const DIFFICULTIES = {
+      easy: {
+        name: '简单',
+        dinoSpeedMult: 0.72,
+        spawnIntervalSec: 14,
+        maxDinos: 5,
+        initialDinos: 2,
+        poisonCount: 6,
+        goodCount: 14,
+        goalScore: 25,
+        goalKills: 3
+      },
+      normal: {
+        name: '普通',
+        dinoSpeedMult: 1.0,
+        spawnIntervalSec: 10,
+        maxDinos: 8,
+        initialDinos: 3,
+        poisonCount: 9,
+        goodCount: 12,
+        goalScore: 35,
+        goalKills: 5
+      },
+      hard: {
+        name: '困难',
+        dinoSpeedMult: 1.25,
+        spawnIntervalSec: 7,
+        maxDinos: 11,
+        initialDinos: 4,
+        poisonCount: 12,
+        goodCount: 12,
+        goalScore: 50,
+        goalKills: 7
+      },
+      hell: {
+        name: '恐龙狂潮',
+        dinoSpeedMult: 1.45,
+        spawnIntervalSec: 5,
+        maxDinos: 16,
+        initialDinos: 6,
+        poisonCount: 15,
+        goodCount: 14,
+        goalScore: 70,
+        goalKills: 10
+      }
+    };
+
+    let currentDiffKey = 'normal';
+    let diffConfig = DIFFICULTIES[currentDiffKey];
+
+    document.querySelectorAll('.diff-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentDiffKey = btn.getAttribute('data-diff');
+        diffConfig = DIFFICULTIES[currentDiffKey];
+        document.querySelectorAll('.diff-btn').forEach(b => {
+          b.classList.toggle('active', b.getAttribute('data-diff') === currentDiffKey);
+        });
+      });
+    });
+
+    // 音效合成器
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+    function ensureAudio() {
+      if (!audioCtx) audioCtx = new AudioCtx();
+    }
+    function playSound(type) {
+      try {
+        ensureAudio();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+
+        if (type === 'eat') {
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(520, now);
+          osc.frequency.exponentialRampToValueAtTime(960, now + 0.14);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+          osc.start(now);
+          osc.stop(now + 0.15);
+        } else if (type === 'poison') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(300, now);
+          osc.frequency.linearRampToValueAtTime(115, now + 0.28);
+          gain.gain.setValueAtTime(0.22, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.28);
+          osc.start(now);
+          osc.stop(now + 0.28);
+        } else if (type === 'club') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(180, now);
+          osc.frequency.exponentialRampToValueAtTime(440, now + 0.2);
+          gain.gain.setValueAtTime(0.28, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.22);
+          osc.start(now);
+          osc.stop(now + 0.22);
+        } else if (type === 'hit') {
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(150, now);
+          osc.frequency.exponentialRampToValueAtTime(55, now + 0.25);
+          gain.gain.setValueAtTime(0.35, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+          osc.start(now);
+          osc.stop(now + 0.25);
+        } else if (type === 'win') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(440, now);
+          osc.frequency.setValueAtTime(554, now + 0.12);
+          osc.frequency.setValueAtTime(659, now + 0.24);
+          osc.frequency.setValueAtTime(880, now + 0.36);
+          gain.gain.setValueAtTime(0.26, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.65);
+          osc.start(now);
+          osc.stop(now + 0.65);
+        } else if (type === 'dead') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(190, now);
+          osc.frequency.exponentialRampToValueAtTime(48, now + 0.55);
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.linearRampToValueAtTime(0.01, now + 0.55);
+          osc.start(now);
+          osc.stop(now + 0.55);
+        }
+      } catch (e) {}
+    }
+
+    let running = false;
+    let score = 0;
+    let kills = 0;
+    let frameCount = 0;
+    let spawnFramesLeft = 0;
+    const keys = {};
+
+    // 主角：放大版绿甲龙
+    const player = {
+      x: 500,
+      y: 400,
+      radius: 32,        // 放大体型
+      speed: 4.6,
+      angle: 0,
+      dashTimer: 0,
+      dashCooldown: 0,
+      clubTimer: 0,
+      clubCooldown: 0,
+      clubRadius: 105,   // 放大尾锤旋风攻击范围
+      poisonFlash: 0,
+      tailSwing: 0,
+      inBush: false
+    };
+
+    let bushes = [];
+    let goodPlants = [];
+    let poisonPlants = [];
+    let carnivores = [];
+    let friendDinos = []; // 友军食草恐龙（三角龙伙伴）
+    let venomSpits = [];  // 双冠龙喷射的毒液球
+    let floatTexts = [];
+    let shockwaves = [];
+
+    window.addEventListener('keydown', (e) => {
+      keys[e.code] = true;
+      if ((e.code === 'Space' || e.code === 'KeyJ') && running) {
+        triggerTailClub();
+        e.preventDefault();
+      }
+      if ((e.code === 'ShiftLeft' || e.code === 'ShiftRight' || e.code === 'KeyK') && running) {
+        triggerDash();
+        e.preventDefault();
+      }
+      if (e.code === 'Enter' && !running && !gameoverScreen.classList.contains('hidden')) {
+        startGame();
+      }
+    });
+    window.addEventListener('keyup', (e) => {
+      keys[e.code] = false;
+    });
+
+    window.addEventListener('contextmenu', (e) => {
+      if (running) {
+        e.preventDefault();
+        triggerTailClub();
+      }
+    });
+    clubBtn.addEventListener('click', () => { if (running) triggerTailClub(); });
+    dashBtn.addEventListener('click', () => { if (running) triggerDash(); });
+
+    function initBushes() {
+      const w = canvas.width;
+      const h = canvas.height;
+      // 根据大屏幕尺寸自动布置 5 个超大隐身草丛
+      bushes = [
+        { x: w * 0.2, y: h * 0.26, radius: 68, sway: 0 },
+        { x: w * 0.8, y: h * 0.26, radius: 68, sway: 1.2 },
+        { x: w * 0.2, y: h * 0.74, radius: 68, sway: 2.5 },
+        { x: w * 0.8, y: h * 0.74, radius: 68, sway: 3.8 },
+        { x: w * 0.5, y: h * 0.22, radius: 64, sway: 5.0 }
+      ];
+    }
+
+    function randomPos(margin = 70) {
+      for (let tries = 0; tries < 30; tries++) {
+        const x = margin + Math.random() * (canvas.width - margin * 2);
+        const y = margin + 60 + Math.random() * (canvas.height - margin * 2 - 80);
+        const distPlayer = Math.hypot(x - player.x, y - player.y);
+        const inAnyBush = bushes.some(b => Math.hypot(x - b.x, y - b.y) < b.radius + 16);
+        if (distPlayer > 110 && !inAnyBush) return { x, y };
+      }
+      return {
+        x: margin + Math.random() * (canvas.width - margin * 2),
+        y: margin + 60 + Math.random() * (canvas.height - margin * 2 - 80)
+      };
+    }
+
+    function spawnGoodPlant(customX = null, customY = null, forceGolden = false) {
+      const p = (customX !== null && customY !== null) ? { x: customX, y: customY } : randomPos(70);
+      const isGolden = forceGolden || Math.random() < 0.25;
+      goodPlants.push({
+        x: p.x,
+        y: p.y,
+        radius: isGolden ? 24 : 21,
+        points: isGolden ? 3 : 1,
+        isGolden,
+        pulse: Math.random() * Math.PI * 2
+      });
+    }
+
+    function spawnPoisonPlant() {
+      const p = randomPos(70);
+      poisonPlants.push({
+        x: p.x,
+        y: p.y,
+        radius: 21,
+        pulse: Math.random() * Math.PI * 2,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: (Math.random() - 0.5) * 0.5
+      });
+    }
+
+    // 生成友军食草恐龙：三角龙伙伴 (Triceratops)
+    function spawnFriendTriceratops() {
+      const p = randomPos(120);
+      const angle = Math.random() * Math.PI * 2;
+      friendDinos.push({
+        x: p.x,
+        y: p.y,
+        vx: Math.cos(angle) * 1.4,
+        vy: Math.sin(angle) * 1.4,
+        radius: 32,
+        giftTimer: 360 + Math.floor(Math.random() * 240),
+        turnTimer: 90
+      });
+    }
+
+    // 5 种肉食性恐龙配置：
+    // 1. trex (霸王龙)
+    // 2. spinosaurus (巨型棘龙 - 背帆BOSS)
+    // 3. raptor (迅猛龙 - 高速)
+    // 4. dilophosaurus (双冠毒龙 - 喷射毒液)
+    // 5. pteranodon (天空翼龙 - 飞行突袭)
+    const DINO_SPECIES = [
+      { kind: 'trex', name: '🦖霸王龙', radius: 34, baseSpeed: 1.9, hp: 2, scoreReward: 5 },
+      { kind: 'spinosaurus', name: '🐊巨型棘龙', radius: 40, baseSpeed: 1.65, hp: 3, scoreReward: 8 },
+      { kind: 'raptor', name: '🦎迅猛龙', radius: 24, baseSpeed: 2.7, hp: 1, scoreReward: 3 },
+      { kind: 'dilophosaurus', name: '🧪双冠毒龙', radius: 28, baseSpeed: 1.8, hp: 2, scoreReward: 5 },
+      { kind: 'pteranodon', name: '🦅天空翼龙', radius: 26, baseSpeed: 2.5, hp: 1, scoreReward: 4 }
+    ];
+
+    function spawnCarnivore(forcedKind = null) {
+      const spec = forcedKind
+        ? DINO_SPECIES.find(s => s.kind === forcedKind)
+        : DINO_SPECIES[Math.floor(Math.random() * DINO_SPECIES.length)];
+
+      const edge = Math.floor(Math.random() * 4);
+      let x, y;
+      if (edge === 0) { x = 45; y = 90 + Math.random() * (canvas.height - 160); }
+      else if (edge === 1) { x = canvas.width - 45; y = 90 + Math.random() * (canvas.height - 160); }
+      else if (edge === 2) { x = 80 + Math.random() * (canvas.width - 160); y = 85; }
+      else { x = 80 + Math.random() * (canvas.width - 160); y = canvas.height - 70; }
+
+      const angle = Math.atan2(player.y - y, player.x - x);
+      const speed = spec.baseSpeed * diffConfig.dinoSpeedMult;
+
+      carnivores.push({
+        x,
+        y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        speed,
+        radius: spec.radius,
+        kind: spec.kind,
+        name: spec.name,
+        hp: spec.hp,
+        maxHp: spec.hp,
+        scoreReward: spec.scoreReward,
+        stunTimer: 0,
+        knockVx: 0,
+        knockVy: 0,
+        jawAnim: Math.random() * 5,
+        turnTimer: 30,
+        spitTimer: 150 + Math.floor(Math.random() * 120) // 双冠龙喷毒计时
+      });
+    }
+
+    function addFloatText(text, x, y, color) {
+      floatTexts.push({ text, x, y, color, alpha: 1, dy: -1.6 });
+    }
+
+    function triggerTailClub() {
+      if (player.clubCooldown > 0) return;
+      player.clubTimer = 24;
+      player.clubCooldown = 42;
+      playSound('club');
+
+      shockwaves.push({
+        x: player.x,
+        y: player.y,
+        r: 30,
+        maxR: player.clubRadius,
+        alpha: 0.95
+      });
+
+      checkTailClubHit();
+    }
+
+    function checkTailClubHit() {
+      for (let i = carnivores.length - 1; i >= 0; i--) {
+        const c = carnivores[i];
+        if (c.stunTimer > 16) continue;
+        const dist = Math.hypot(c.x - player.x, c.y - player.y);
+        if (dist <= player.clubRadius + c.radius) {
+          c.hp -= 1;
+          c.stunTimer = 42;
+          const knockAngle = Math.atan2(c.y - player.y, c.x - player.x);
+          c.knockVx = Math.cos(knockAngle) * 11;
+          c.knockVy = Math.sin(knockAngle) * 11;
+          playSound('hit');
+
+          if (c.hp <= 0) {
+            kills += 1;
+            score += c.scoreReward;
+            updateHud();
+            addFloatText(`🔨 打败${c.name}！+${c.scoreReward}分`, c.x, c.y - 20, '#ffd43b');
+            carnivores.splice(i, 1);
+            checkWinCondition();
+          } else {
+            addFloatText(`🔨 尾锤重击！${c.name}还剩 ${c.hp} 血`, c.x, c.y - 20, '#ffa94d');
+          }
+        }
+      }
+    }
+
+    function triggerDash() {
+      if (player.dashCooldown <= 0) {
+        player.dashTimer = 20;
+        player.dashCooldown = 60;
+        playSound('club');
+        addFloatText('⚡ 绿甲龙冲刺！', player.x, player.y - 25, '#74c0fc');
+      }
+    }
+
+    function updateHud() {
+      scoreEl.textContent = score;
+      goalScoreEl.textContent = diffConfig.goalScore;
+      killCountEl.textContent = kills;
+      goalKillsEl.textContent = diffConfig.goalKills;
+      hudDiffEl.textContent = diffConfig.name;
+    }
+
+    function checkWinCondition() {
+      if (!running) return;
+      if (score >= diffConfig.goalScore || kills >= diffConfig.goalKills) {
+        running = false;
+        playSound('win');
+        endTitleEl.textContent = '🏆 恭喜通关！绿甲龙称霸侏罗纪！';
+        endTitleEl.style.color = '#ffe066';
+        endReasonEl.textContent = score >= diffConfig.goalScore
+          ? `你成功吃够了远古植物，达到了 ${score} 分的目标！`
+          : `你用威猛的尾锤打败了 ${kills} 只凶猛的肉食恐龙！`;
+        finalScoreEl.textContent = score;
+        finalKillsEl.textContent = kills;
+        gameoverScreen.classList.remove('hidden');
+      }
+    }
+
+    function triggerLose(reason) {
+      if (!running) return;
+      running = false;
+      playSound('dead');
+      endTitleEl.textContent = '💥 游戏结束！小甲龙倒下了';
+      endTitleEl.style.color = '#ff6b6b';
+      endReasonEl.textContent = reason;
+      finalScoreEl.textContent = score;
+      finalKillsEl.textContent = kills;
+      gameoverScreen.classList.remove('hidden');
+    }
+
+    function startGame() {
+      ensureAudio();
+      resizeCanvas();
+      diffConfig = DIFFICULTIES[currentDiffKey];
+      score = 0;
+      kills = 0;
+      frameCount = 0;
+      spawnFramesLeft = diffConfig.spawnIntervalSec * 60;
+
+      player.x = canvas.width / 2;
+      player.y = canvas.height * 0.55;
+      player.angle = 0;
+      player.dashTimer = 0;
+      player.dashCooldown = 0;
+      player.clubTimer = 0;
+      player.clubCooldown = 0;
+      player.poisonFlash = 0;
+      player.inBush = false;
+
+      initBushes();
+      goodPlants = [];
+      poisonPlants = [];
+      carnivores = [];
+      friendDinos = [];
+      venomSpits = [];
+      floatTexts = [];
+      shockwaves = [];
+
+      for (let i = 0; i < diffConfig.goodCount; i++) spawnGoodPlant();
+      for (let i = 0; i < diffConfig.poisonCount; i++) spawnPoisonPlant();
+
+      // 开局生成 1 只友军三角龙伙伴
+      spawnFriendTriceratops();
+
+      // 开局生成不同种类的肉食恐龙
+      const starterKinds = ['trex', 'raptor', 'dilophosaurus', 'spinosaurus', 'pteranodon'];
+      for (let i = 0; i < diffConfig.initialDinos; i++) {
+        spawnCarnivore(starterKinds[i % starterKinds.length]);
+      }
+
+      updateHud();
+      startScreen.classList.add('hidden');
+      gameoverScreen.classList.add('hidden');
+      running = true;
+    }
+
+    let mouseTarget = null;
+    canvas.addEventListener('mousedown', (e) => {
+      if (e.button !== 0) return;
+      const rect = canvas.getBoundingClientRect();
+      mouseTarget = {
+        x: (e.clientX - rect.left) * (canvas.width / rect.width),
+        y: (e.clientY - rect.top) * (canvas.height / rect.height)
+      };
+    });
+    canvas.addEventListener('mousemove', (e) => {
+      if (e.buttons === 1) {
+        const rect = canvas.getBoundingClientRect();
+        mouseTarget = {
+          x: (e.clientX - rect.left) * (canvas.width / rect.width),
+          y: (e.clientY - rect.top) * (canvas.height / rect.height)
+        };
+      }
+    });
+    window.addEventListener('mouseup', () => { mouseTarget = null; });
+
+    function update() {
+      if (!running) return;
+      frameCount++;
+
+      // 新恐龙倒计时
+      spawnFramesLeft--;
+      nextSpawnTimerEl.textContent = Math.max(1, Math.ceil(spawnFramesLeft / 60));
+      if (spawnFramesLeft <= 0) {
+        spawnFramesLeft = diffConfig.spawnIntervalSec * 60;
+        if (carnivores.length < diffConfig.maxDinos) {
+          spawnCarnivore();
+          const newest = carnivores[carnivores.length - 1];
+          addFloatText(`⚠️ 新的 ${newest.name} 闯入丛林！`, canvas.width / 2, 110, '#ff8787');
+        }
+      }
+
+      // 玩家移动
+      let dx = 0, dy = 0;
+      if (keys['ArrowUp'] || keys['KeyW']) dy -= 1;
+      if (keys['ArrowDown'] || keys['KeyS']) dy += 1;
+      if (keys['ArrowLeft'] || keys['KeyA']) dx -= 1;
+      if (keys['ArrowRight'] || keys['KeyD']) dx += 1;
+
+      const curSpeed = player.dashTimer > 0 ? player.speed * 2.0 : player.speed;
+
+      if (dx !== 0 || dy !== 0) {
+        const len = Math.hypot(dx, dy);
+        player.x += (dx / len) * curSpeed;
+        player.y += (dy / len) * curSpeed;
+        if (player.clubTimer <= 0) player.angle = Math.atan2(dy, dx);
+        player.tailSwing += 0.25;
+      } else if (mouseTarget) {
+        const mdx = mouseTarget.x - player.x;
+        const mdy = mouseTarget.y - player.y;
+        const mdist = Math.hypot(mdx, mdy);
+        if (mdist > 10) {
+          player.x += (mdx / mdist) * curSpeed;
+          player.y += (mdy / mdist) * curSpeed;
+          if (player.clubTimer <= 0) player.angle = Math.atan2(mdy, mdx);
+          player.tailSwing += 0.25;
+        }
+      }
+
+      if (player.clubTimer > 0) {
+        player.clubTimer--;
+        player.angle += 0.45;
+        checkTailClubHit();
+      }
+      if (player.clubCooldown > 0) player.clubCooldown--;
+      if (player.dashTimer > 0) player.dashTimer--;
+      if (player.dashCooldown > 0) player.dashCooldown--;
+      if (player.poisonFlash > 0) player.poisonFlash--;
+
+      player.x = Math.max(player.radius + 14, Math.min(canvas.width - player.radius - 14, player.x));
+      player.y = Math.max(player.radius + 70, Math.min(canvas.height - player.radius - 60, player.y));
+
+      // 草丛保护色隐身判定
+      const wasInBush = player.inBush;
+      player.inBush = false;
+      for (const b of bushes) {
+        b.sway += 0.03;
+        if (Math.hypot(player.x - b.x, player.y - b.y) < b.radius - 4) {
+          player.inBush = true;
+        }
+      }
+      if (player.inBush !== wasInBush) {
+        if (player.inBush) {
+          stealthStatusEl.textContent = '🌿 草丛隐身中（恐龙看不见你）';
+          stealthStatusEl.style.color = '#69db7c';
+          addFloatText('🌿 绿甲龙保护色隐身！', player.x, player.y - 35, '#a9e34b');
+        } else {
+          stealthStatusEl.textContent = '👀 暴露在外';
+          stealthStatusEl.style.color = '#ffd43b';
+        }
+      }
+
+      // 更新友军三角龙伙伴
+      for (const fd of friendDinos) {
+        fd.turnTimer--;
+        if (fd.turnTimer <= 0) {
+          const a = Math.random() * Math.PI * 2;
+          fd.vx = Math.cos(a) * 1.4;
+          fd.vy = Math.sin(a) * 1.4;
+          fd.turnTimer = 90 + Math.floor(Math.random() * 80);
+        }
+        fd.x += fd.vx;
+        fd.y += fd.vy;
+        if (fd.x < 60 || fd.x > canvas.width - 60) fd.vx *= -1;
+        if (fd.y < 90 || fd.y > canvas.height - 80) fd.vy *= -1;
+
+        // 定期掉落金色远古果帮玩家加分
+        fd.giftTimer--;
+        if (fd.giftTimer <= 0) {
+          fd.giftTimer = 420;
+          if (goodPlants.length < 22) {
+            spawnGoodPlant(fd.x, fd.y, true);
+            addFloatText('🦕 三角龙伙伴送你一颗金果！', fd.x, fd.y - 30, '#74c0fc');
+          }
+        }
+
+        // 三角龙会帮玩家用头角顶飞靠近它的肉食恐龙！
+        for (const c of carnivores) {
+          if (c.stunTimer <= 0 && Math.hypot(c.x - fd.x, c.y - fd.y) < fd.radius + c.radius) {
+            c.stunTimer = 35;
+            const pushA = Math.atan2(c.y - fd.y, c.x - fd.x);
+            c.knockVx = Math.cos(pushA) * 10;
+            c.knockVy = Math.sin(pushA) * 10;
+            addFloatText('🦕 三角龙撞飞了食肉恐龙！', fd.x, fd.y - 25, '#74c0fc');
+          }
+        }
+      }
+
+      // 吃无毒植物
+      for (let i = goodPlants.length - 1; i >= 0; i--) {
+        const g = goodPlants[i];
+        g.pulse += 0.07;
+        if (Math.hypot(player.x - g.x, player.y - g.y) < player.radius + g.radius + 4) {
+          score += g.points;
+          updateHud();
+          playSound('eat');
+          addFloatText(
+            g.isGolden ? `🍎 金色远古果 +${g.points}分！` : `🌿 无毒植物 +${g.points}分`,
+            g.x,
+            g.y - 14,
+            g.isGolden ? '#ffd43b' : '#69db7c'
+          );
+          goodPlants.splice(i, 1);
+          spawnGoodPlant();
+          checkWinCondition();
+          if (!running) return;
+        }
+      }
+
+      // 吃有毒植物 (-2分)
+      for (let i = poisonPlants.length - 1; i >= 0; i--) {
+        const p = poisonPlants[i];
+        p.pulse += 0.08;
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 45 || p.x > canvas.width - 45) p.vx *= -1;
+        if (p.y < 85 || p.y > canvas.height - 65) p.vy *= -1;
+
+        if (Math.hypot(player.x - p.x, player.y - p.y) < player.radius + p.radius) {
+          score -= 2;
+          updateHud();
+          player.poisonFlash = 28;
+          playSound('poison');
+          addFloatText('🍄 吃到毒植物 -2分！', p.x, p.y - 14, '#e599f7');
+          poisonPlants.splice(i, 1);
+          spawnPoisonPlant();
+
+          if (score <= -5) {
+            triggerLose('你吃了太多有毒的远古植物（分数跌到 -5 分），中毒倒下了！');
+            return;
+          }
+        }
+      }
+
+      // 更新双冠龙喷出的毒液球
+      for (let i = venomSpits.length - 1; i >= 0; i--) {
+        const v = venomSpits[i];
+        v.x += v.vx;
+        v.y += v.vy;
+        v.life--;
+        if (v.life <= 0) {
+          venomSpits.splice(i, 1);
+          continue;
+        }
+        if (!player.inBush && Math.hypot(player.x - v.x, player.y - v.y) < player.radius + v.r) {
+          score -= 2;
+          updateHud();
+          player.poisonFlash = 28;
+          playSound('poison');
+          addFloatText('🧪 被双冠龙毒液喷中 -2分！', player.x, player.y - 20, '#b197fc');
+          venomSpits.splice(i, 1);
+          if (score <= -5) {
+            triggerLose('你被双冠龙的毒液连续击中（分数跌到 -5 分），中毒倒下了！');
+            return;
+          }
+        }
+      }
+
+      // 更新肉食恐龙大军
+      for (const c of carnivores) {
+        c.jawAnim += 0.16;
+
+        if (c.stunTimer > 0) {
+          c.stunTimer--;
+          c.x += c.knockVx;
+          c.y += c.knockVy;
+          c.knockVx *= 0.88;
+          c.knockVy *= 0.88;
+          c.x = Math.max(c.radius + 14, Math.min(canvas.width - c.radius - 14, c.x));
+          c.y = Math.max(c.radius + 70, Math.min(canvas.height - c.radius - 60, c.y));
+          continue;
+        }
+
+        // 双冠毒龙远程喷毒液
+        if (c.kind === 'dilophosaurus' && !player.inBush) {
+          c.spitTimer--;
+          if (c.spitTimer <= 0) {
+            c.spitTimer = 170 + Math.floor(Math.random() * 90);
+            const sa = Math.atan2(player.y - c.y, player.x - c.x);
+            venomSpits.push({
+              x: c.x,
+              y: c.y,
+              vx: Math.cos(sa) * 4.5,
+              vy: Math.sin(sa) * 4.5,
+              r: 9,
+              life: 160
+            });
+          }
+        }
+
+        c.turnTimer--;
+        if (player.inBush) {
+          if (c.turnTimer <= 0) {
+            const randAngle = Math.random() * Math.PI * 2;
+            c.vx = Math.cos(randAngle) * (c.speed * 0.8);
+            c.vy = Math.sin(randAngle) * (c.speed * 0.8);
+            c.turnTimer = 45 + Math.floor(Math.random() * 45);
+          }
+          for (const b of bushes) {
+            if (Math.hypot(c.x - b.x, c.y - b.y) < b.radius + c.radius + 8) {
+              const away = Math.atan2(c.y - b.y, c.x - b.x);
+              c.vx = Math.cos(away) * c.speed;
+              c.vy = Math.sin(away) * c.speed;
+            }
+          }
+        } else if (c.turnTimer <= 0) {
+          const targetAngle = Math.atan2(player.y - c.y, player.x - c.x) + (Math.random() - 0.5) * 0.4;
+          c.vx = Math.cos(targetAngle) * c.speed;
+          c.vy = Math.sin(targetAngle) * c.speed;
+          c.turnTimer = 25 + Math.floor(Math.random() * 30);
+        }
+
+        c.x += c.vx;
+        c.y += c.vy;
+
+        if (c.x < c.radius + 14 || c.x > canvas.width - c.radius - 14) c.vx *= -1;
+        if (c.y < c.radius + 70 || c.y > canvas.height - c.radius - 60) c.vy *= -1;
+
+        if (!player.inBush && player.clubTimer <= 0) {
+          const dist = Math.hypot(player.x - c.x, player.y - c.y);
+          if (dist < player.radius + c.radius - 8) {
+            triggerLose(`你被凶猛的 ${c.name} 抓住了！记得躲进草丛隐身，或按空格键甩尾锤打飞它！`);
+            return;
+          }
+        }
+      }
+
+      for (let i = shockwaves.length - 1; i >= 0; i--) {
+        const sw = shockwaves[i];
+        sw.r += (sw.maxR - sw.r) * 0.25;
+        sw.alpha -= 0.06;
+        if (sw.alpha <= 0) shockwaves.splice(i, 1);
+      }
+
+      for (let i = floatTexts.length - 1; i >= 0; i--) {
+        const ft = floatTexts[i];
+        ft.y += ft.dy;
+        ft.alpha -= 0.017;
+        if (ft.alpha <= 0) floatTexts.splice(i, 1);
+      }
+    }
+
+    function drawGoodPlant(g) {
+      ctx.save();
+      ctx.translate(g.x, g.y);
+      const scale = 1 + Math.sin(g.pulse) * 0.1;
+      ctx.scale(scale, scale);
+
+      ctx.beginPath();
+      ctx.arc(0, 0, g.radius + 6, 0, Math.PI * 2);
+      ctx.fillStyle = g.isGolden ? 'rgba(255, 212, 59, 0.3)' : 'rgba(105, 219, 124, 0.26)';
+      ctx.fill();
+
+      if (g.isGolden) {
+        ctx.beginPath();
+        ctx.arc(0, 0, 16, 0, Math.PI * 2);
+        ctx.fillStyle = '#fcc419';
+        ctx.fill();
+        ctx.strokeStyle = '#fff3bf';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+
+        ctx.fillStyle = '#fff9db';
+        ctx.font = 'bold 14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('🍎金果+3', 0, 32);
+      } else {
+        for (let i = 0; i < 6; i++) {
+          ctx.save();
+          ctx.rotate((i * Math.PI * 2) / 6);
+          ctx.beginPath();
+          ctx.ellipse(0, -11, 6, 13, 0, 0, Math.PI * 2);
+          ctx.fillStyle = '#51cf66';
+          ctx.fill();
+          ctx.strokeStyle = '#d3f9d8';
+          ctx.lineWidth = 1.4;
+          ctx.stroke();
+          ctx.restore();
+        }
+        ctx.beginPath();
+        ctx.arc(0, 0, 6, 0, Math.PI * 2);
+        ctx.fillStyle = '#ebfbee';
+        ctx.fill();
+
+        ctx.fillStyle = '#b2f2bb';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('🌿无毒+1', 0, 30);
+      }
+      ctx.restore();
+    }
+
+    function drawPoisonPlant(p) {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      const scale = 1 + Math.sin(p.pulse) * 0.1;
+      ctx.scale(scale, scale);
+
+      ctx.beginPath();
+      ctx.arc(0, 0, p.radius + 5, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(190, 75, 219, 0.3)';
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(0, -2, 17, Math.PI, 0, false);
+      ctx.closePath();
+      ctx.fillStyle = '#9c36b5';
+      ctx.fill();
+      ctx.strokeStyle = '#f3d9fa';
+      ctx.lineWidth = 1.8;
+      ctx.stroke();
+
+      ctx.fillStyle = '#e5dbff';
+      ctx.fillRect(-5, -2, 10, 14);
+
+      ctx.fillStyle = '#fcc2d7';
+      [[-7, -8, 3], [0, -12, 3.5], [7, -7, 3]].forEach(([bx, by, br]) => {
+        ctx.beginPath();
+        ctx.arc(bx, by, br, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.fillStyle = '#eebefa';
+      ctx.font = 'bold 13px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🍄毒-2', 0, 28);
+      ctx.restore();
+    }
+
+    function drawBushBase(b) {
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      ctx.beginPath();
+      ctx.arc(0, 0, b.radius, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(25, 84, 34, 0.8)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(140, 233, 154, 0.6)';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([8, 5]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      const blobs = 8;
+      for (let i = 0; i < blobs; i++) {
+        const a = (i * Math.PI * 2) / blobs + Math.sin(b.sway) * 0.04;
+        const bx = Math.cos(a) * (b.radius * 0.68);
+        const by = Math.sin(a) * (b.radius * 0.68);
+        ctx.beginPath();
+        ctx.arc(bx, by, b.radius * 0.42, 0, Math.PI * 2);
+        ctx.fillStyle = i % 2 === 0 ? '#2b7a38' : '#379144';
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawBushCanopy(b) {
+      ctx.save();
+      ctx.translate(b.x, b.y);
+      const swayOffset = Math.sin(b.sway) * 4;
+      const leaves = [
+        [-28, -20], [24, -24], [0, -8], [-24, 20], [26, 18], [0, 28], [-34, 2], [34, -2]
+      ];
+      for (let i = 0; i < leaves.length; i++) {
+        const [lx, ly] = leaves[i];
+        ctx.save();
+        ctx.translate(lx + swayOffset * (i % 2 === 0 ? 1 : -1), ly);
+        ctx.beginPath();
+        ctx.moveTo(-13, 10);
+        ctx.quadraticCurveTo(-5, -18, 0, -20);
+        ctx.quadraticCurveTo(5, -18, 13, 10);
+        ctx.closePath();
+        ctx.fillStyle = i % 2 === 0 ? 'rgba(64, 160, 75, 0.86)' : 'rgba(82, 183, 88, 0.82)';
+        ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.fillStyle = '#d3f9d8';
+      ctx.font = 'bold 14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🌳 隐身大草丛', 0, b.radius + 20);
+      ctx.restore();
+    }
+
+    // 绘制友军三角龙伙伴 (Triceratops)
+    function drawFriendTriceratops(fd) {
+      ctx.save();
+      ctx.translate(fd.x, fd.y);
+      const angle = Math.atan2(fd.vy, fd.vx);
+      ctx.rotate(angle);
+
+      // 友军蓝光圈
+      ctx.beginPath();
+      ctx.arc(0, 0, fd.radius + 6, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(116, 192, 252, 0.22)';
+      ctx.fill();
+
+      // 身体
+      ctx.beginPath();
+      ctx.ellipse(-4, 0, 24, 18, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#339af0';
+      ctx.fill();
+      ctx.strokeStyle = '#a5d8ff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // 标志性扇形头盾 (Frill)
+      ctx.beginPath();
+      ctx.ellipse(12, 0, 9, 22, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#1c7ed6';
+      ctx.fill();
+      ctx.strokeStyle = '#d0ebff';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // 头部与三根长角
+      ctx.beginPath();
+      ctx.ellipse(22, 0, 12, 10, 0, 0, Math.PI * 2);
+      ctx.fillStyle = '#4dabf7';
+      ctx.fill();
+
+      ctx.strokeStyle = '#fff9db';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(24, -6); ctx.lineTo(38, -11);
+      ctx.moveTo(24, 6);  ctx.lineTo(38, 11);
+      ctx.moveTo(30, 0);  ctx.lineTo(39, 0);
+      ctx.stroke();
+
+      ctx.restore();
+
+      ctx.save();
+      ctx.fillStyle = '#a5d8ff';
+      ctx.font = 'bold 14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🦕 友军三角龙 (帮打怪+送金果)', fd.x, fd.y - fd.radius - 12);
+      ctx.restore();
+    }
+
+    // 绘制主角：放大版绿色小甲龙
+    function drawAnkylosaurus() {
+      ctx.save();
+      ctx.translate(player.x, player.y);
+      ctx.scale(1.28, 1.28); // 整体放大主角外观
+
+      if (player.inBush) {
+        ctx.globalAlpha = 0.68;
+      }
+
+      ctx.rotate(player.angle);
+
+      if (player.clubTimer > 0) {
+        ctx.beginPath();
+        ctx.arc(0, 0, player.clubRadius / 1.28, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 169, 77, 0.28)';
+        ctx.fill();
+        ctx.strokeStyle = '#ffd43b';
+        ctx.lineWidth = 3.5;
+        ctx.stroke();
+      }
+
+      const swing = player.clubTimer > 0 ? Math.sin(frameCount * 0.8) * 14 : Math.sin(player.tailSwing) * 4;
+      const tailLen = player.clubTimer > 0 ? -54 : -38;
+
+      ctx.beginPath();
+      ctx.moveTo(-16, 0);
+      ctx.quadraticCurveTo(-28, swing, tailLen, swing * 1.2);
+      ctx.strokeStyle = '#3b8744';
+      ctx.lineWidth = 8;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.ellipse(tailLen - 4, swing * 1.2, player.clubTimer > 0 ? 16 : 11, player.clubTimer > 0 ? 13 : 8.5, 0, 0, Math.PI * 2);
+      ctx.fillStyle = player.clubTimer > 0 ? '#ffd43b' : '#265c2d';
+      ctx.fill();
+      ctx.strokeStyle = '#fff3bf';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = '#40914a';
+      [[-10, -17], [10, -17], [-10, 17], [10, 17]].forEach(([lx, ly]) => {
+        ctx.beginPath();
+        ctx.arc(lx, ly, 5.5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      ctx.beginPath();
+      ctx.ellipse(22, 0, 10, 8, 0, 0, Math.PI * 2);
+      ctx.fillStyle = player.poisonFlash > 0 ? '#cc5de8' : '#51ad5b';
+      ctx.fill();
+
+      ctx.fillStyle = '#111';
+      ctx.beginPath();
+      ctx.arc(25, -4, 2, 0, Math.PI * 2);
+      ctx.arc(25, 4, 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 21, 17, 0, 0, Math.PI * 2);
+      ctx.fillStyle = player.poisonFlash > 0 ? '#9c36b5' : '#2b6e34';
+      ctx.fill();
+      ctx.strokeStyle = '#8ce99a';
+      ctx.lineWidth = 2.5;
+      ctx.stroke();
+
+      ctx.fillStyle = '#479e52';
+      for (let gx = -10; gx <= 10; gx += 10) {
+        for (let gy = -6; gy <= 6; gy += 12) {
+          ctx.beginPath();
+          ctx.arc(gx, gy, 3.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+
+      ctx.save();
+      ctx.font = 'bold 15px sans-serif';
+      ctx.textAlign = 'center';
+      if (player.clubTimer > 0) {
+        ctx.fillStyle = '#ffd43b';
+        ctx.fillText('🔨 旋风尾锤攻击！', player.x, player.y - player.radius - 14);
+      } else if (player.inBush) {
+        ctx.fillStyle = '#b2f2bb';
+        ctx.fillText('🛡️ 保护色隐身中', player.x, player.y - player.radius - 14);
+      } else {
+        ctx.fillStyle = '#d8f3dc';
+        ctx.fillText('🛡️ 绿甲龙(你)', player.x, player.y - player.radius - 12);
+      }
+      ctx.restore();
+    }
+
+    // 绘制 5 种不同造型与特征的肉食恐龙
+    function drawCarnivore(c) {
+      ctx.save();
+      ctx.translate(c.x, c.y);
+      const angle = Math.atan2(c.vy, c.vx);
+      ctx.rotate(angle);
+
+      const scaleMap = {
+        spinosaurus: 1.45,
+        trex: 1.28,
+        dilophosaurus: 1.15,
+        pteranodon: 1.15,
+        raptor: 1.05
+      };
+      const sc = scaleMap[c.kind] || 1.2;
+      ctx.scale(sc, sc);
+
+      const colorMap = {
+        trex: '#c92a2a',
+        spinosaurus: '#862e9c',
+        raptor: '#e8590c',
+        dilophosaurus: '#5c940d',
+        pteranodon: '#e67700'
+      };
+      const bodyColor = c.stunTimer > 0 ? '#adb5bd' : (colorMap[c.kind] || '#c92a2a');
+
+      // 危险红圈
+      ctx.beginPath();
+      ctx.arc(0, 0, 24, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255, 70, 70, 0.16)';
+      ctx.fill();
+
+      if (c.kind === 'pteranodon') {
+        // 🦅 翼龙：展开巨大的双翼扇动
+        const wingFlap = Math.sin(c.jawAnim * 1.3) * 8;
+        ctx.fillStyle = bodyColor;
+        ctx.beginPath();
+        ctx.moveTo(4, 0);
+        ctx.lineTo(-8, -28 + wingFlap);
+        ctx.lineTo(-16, -6);
+        ctx.lineTo(-16, 6);
+        ctx.lineTo(-8, 28 - wingFlap);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#ffd8a8';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // 尖长鸟喙头冠
+        ctx.beginPath();
+        ctx.moveTo(-10, 0);
+        ctx.lineTo(26, 0);
+        ctx.lineTo(6, -5);
+        ctx.lineTo(6, 5);
+        ctx.closePath();
+        ctx.fillStyle = '#ff922b';
+        ctx.fill();
+      } else {
+        // 陆地食肉恐龙通用尾巴与躯干
+        ctx.beginPath();
+        ctx.moveTo(-12, 0);
+        ctx.lineTo(-34, Math.sin(c.jawAnim) * 5);
+        ctx.strokeStyle = bodyColor;
+        ctx.lineWidth = 7;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // 双冠龙的特征：颈部扇形毒伞褶边 (Frills)
+        if (c.kind === 'dilophosaurus') {
+          ctx.beginPath();
+          ctx.ellipse(10, 0, 6, 19, 0, 0, Math.PI * 2);
+          ctx.fillStyle = '#fcc419';
+          ctx.fill();
+          ctx.strokeStyle = '#c92a2a';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+
+        // 躯干
+        ctx.beginPath();
+        ctx.ellipse(-2, 0, 18, 13, 0, 0, Math.PI * 2);
+        ctx.fillStyle = bodyColor;
+        ctx.fill();
+        ctx.strokeStyle = '#2b0909';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // 棘龙的特征：背上巨大的帆状背脊 (Sail)
+        if (c.kind === 'spinosaurus') {
+          ctx.beginPath();
+          ctx.ellipse(-3, 0, 14, 6, 0, 0, Math.PI * 2);
+          ctx.fillStyle = '#ff6b6b';
+          ctx.fill();
+          ctx.strokeStyle = '#ffe066';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+
+        // 头部与尖牙
+        ctx.fillStyle = bodyColor;
+        ctx.beginPath();
+        ctx.ellipse(15, 0, 13, 9, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#fff';
+        for (let t = -5; t <= 5; t += 5) {
+          ctx.beginPath();
+          ctx.arc(24, t, 2.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.fillStyle = '#ffe066';
+        ctx.beginPath();
+        ctx.arc(14, -5, 2.8, 0, Math.PI * 2);
+        ctx.arc(14, 5, 2.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+
+      // 头顶名字 + 血条
+      ctx.save();
+      ctx.font = 'bold 14px sans-serif';
+      ctx.textAlign = 'center';
+      let statusText = `${c.name} (HP:${c.hp})`;
+      if (c.stunTimer > 0) statusText = '💫 被尾锤砸晕！';
+      else if (player.inBush) statusText += ' ❓找不到';
+
+      ctx.fillStyle = c.stunTimer > 0 ? '#ffd43b' : (player.inBush ? '#ffe066' : '#ffaaaa');
+      ctx.fillText(statusText, c.x, c.y - c.radius - 12);
+      ctx.restore();
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (const b of bushes) drawBushBase(b);
+      for (const g of goodPlants) drawGoodPlant(g);
+      for (const p of poisonPlants) drawPoisonPlant(p);
+
+      // 绘制双冠龙毒液球
+      for (const v of venomSpits) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(v.x, v.y, v.r, 0, Math.PI * 2);
+        ctx.fillStyle = '#94d82d';
+        ctx.fill();
+        ctx.strokeStyle = '#e9fac8';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // 尾锤冲击波
+      for (const sw of shockwaves) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(sw.x, sw.y, sw.r, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255, 212, 59, ${sw.alpha})`;
+        ctx.lineWidth = 6;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // 绘制友军三角龙
+      for (const fd of friendDinos) drawFriendTriceratops(fd);
+
+      // 绘制绿甲龙
+      drawAnkylosaurus();
+
+      // 绘制草丛顶层叶片
+      for (const b of bushes) drawBushCanopy(b);
+
+      // 绘制所有肉食恐龙
+      for (const c of carnivores) drawCarnivore(c);
+
+      // 绘制飘字
+      for (const ft of floatTexts) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, ft.alpha);
+        ctx.font = 'bold 21px "Microsoft YaHei", sans-serif';
+        ctx.fillStyle = ft.color;
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 3.5;
+        ctx.textAlign = 'center';
+        ctx.strokeText(ft.text, ft.x, ft.y);
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.restore();
+      }
+    }
+
+    function loop() {
+      update();
+      draw();
+      requestAnimationFrame(loop);
+    }
+
+    startBtn.addEventListener('click', startGame);
+    restartBtn.addEventListener('click', startGame);
+
+    initBushes();
+    loop();
+  </script>
+</body>
+</html>

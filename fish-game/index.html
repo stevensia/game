@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#087f8c">
+  <meta name="description" content="李慕思设计的大鱼吃小鱼：黄色黄貂鱼和印鱼伙伴一起探索，普通鱼加1，螃蟹加2，沙丁鱼群加10。">
+  <title>大鱼吃小鱼 · 李慕思设计的游戏</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M24 32 4 14v36Z' fill='%23e99832'/%3E%3Cellipse cx='37' cy='32' rx='25' ry='19' fill='%23ffbb51'/%3E%3Ccircle cx='48' cy='27' r='5' fill='white'/%3E%3Ccircle cx='49' cy='27' r='2.5' fill='%23174854'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css">
+  <script src="game.js" defer></script>
+</head>
+<body>
+  <div class="creator-banner">李慕思设计的游戏</div>
+  <main class="game-shell">
+    <header class="page-header">
+      <div class="brand">
+        <div class="brand-fish" aria-hidden="true">
+          <svg viewBox="0 0 80 64" fill="none">
+            <path d="M25 32 7 15v34l18-17Z" fill="#ffaf43"/>
+            <ellipse cx="43" cy="32" rx="28" ry="21" fill="#ffcf68"/>
+            <path d="m37 13 11-9 7 13" fill="#ffaf43"/>
+            <circle cx="56" cy="27" r="6" fill="white"/>
+            <circle cx="58" cy="27" r="3" fill="#164855"/>
+            <path d="M57 40q6 4 10-2" stroke="#164855" stroke-width="3" stroke-linecap="round"/>
+            <circle cx="51" cy="38" r="4" fill="#ff9680"/>
+          </svg>
+        </div>
+        <div>
+          <p class="eyebrow">小小海洋探险家</p>
+          <h1>大鱼吃小鱼<span class="title-dot">。</span></h1>
+        </div>
+      </div>
+      <div class="header-note"><span aria-hidden="true">✦</span> 慢慢玩，快乐长大</div>
+    </header>
+
+    <section class="game-panel" aria-label="大鱼吃小鱼游戏">
+      <div class="dashboard">
+        <div class="score-group">
+          <div class="score-icon" aria-hidden="true">★</div>
+          <div>
+            <span class="stat-label">吃到的小鱼</span>
+            <div class="score"><strong id="eaten-count">0</strong><span> / 110 条</span></div>
+          </div>
+        </div>
+        <div class="growth-group">
+          <div class="growth-heading"><span id="size-label">黄貂鱼宝宝</span><span id="growth-label">再吃 10 条就长大</span></div>
+          <div class="progress-track" role="progressbar" aria-label="110条挑战进度" aria-valuemin="0" aria-valuemax="110" aria-valuenow="0" id="growth-progress">
+            <div class="progress-fill" id="progress-fill"></div>
+          </div>
+        </div>
+        <div class="toolbar">
+          <button class="icon-button" id="sound-button" aria-pressed="false" type="button" title="开启或关闭音效">♪ <span>音效：关</span></button>
+          <button class="icon-button" id="pause-button" type="button" disabled>Ⅱ <span>暂停</span></button>
+          <button class="icon-button restart-button" id="restart-button" type="button">↻ <span>重新开始</span></button>
+        </div>
+      </div>
+
+      <div class="ocean-stage" id="ocean-stage">
+        <canvas id="ocean" width="1000" height="560" tabindex="0" aria-label="海底游戏区，用方向键或 WASD 移动黄色黄貂鱼，印鱼伙伴会跟随你" aria-describedby="keyboard-help game-message">
+          你的浏览器暂不支持这个游戏，请使用新版 Edge、Chrome、Firefox 或 Safari。
+        </canvas>
+        <div class="ocean-label" aria-hidden="true"><span class="live-dot"></span> 珊瑚湾 · 自由探索</div>
+        <div class="overlay" id="game-overlay">
+          <div class="welcome-card" id="overlay-card">
+            <div class="welcome-badge" id="overlay-badge" aria-hidden="true">🐠</div>
+            <p class="eyebrow" id="overlay-eyebrow">今天，你是海底的小主角</p>
+            <h2 id="overlay-title">黄貂鱼，出发！</h2>
+            <p class="overlay-description" id="overlay-description">印鱼成为你的好伙伴，会一直跟着你！<br>一起吃到 110 条小鱼吧。</p>
+            <div class="welcome-rules" id="welcome-rules">
+              <span><b>↑ ↓ ← →</b> 控制游泳</span>
+              <span><b>小鱼/鲷鱼 +1</b> 螃蟹 +2</span>
+              <span><b>沙丁鱼群</b> +10 条</span>
+              <span><b>大鱼</b> 会吃掉你</span>
+              <span><b>印鱼伙伴</b> 陪你游泳</span>
+            </div>
+            <button class="primary-button" id="play-button" type="button">开始探险 <span aria-hidden="true">→</span></button>
+            <p class="gentle-note" id="overlay-note">没有倒计时。印鱼伙伴会陪你慢慢探索！</p>
+          </div>
+        </div>
+        <div class="celebration" id="celebration" aria-hidden="true"></div>
+      </div>
+
+      <div class="game-footer">
+        <p id="game-message" role="status" aria-live="polite" aria-atomic="true">你好，小探险家！点击“开始探险”，一起去看大海吧。</p>
+        <span class="safe-badge"><span aria-hidden="true">⚠</span> 小心大鱼 · 碰到会被吃掉</span>
+      </div>
+    </section>
+
+    <section class="play-guide" aria-label="玩法说明">
+      <div class="guide-copy">
+        <h2>小手一动，海底出发</h2>
+        <p id="keyboard-help"><kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> 或 <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> 游泳，<kbd>空格</kbd> 暂停。</p>
+        <div class="fish-legend">
+          <span><i class="legend-fish edible" aria-hidden="true"></i><b>比你小：</b>游过去吃掉</span>
+          <span><i class="legend-fish bigger" aria-hidden="true"></i><b>比你大：</b>碰到就会被吃掉</span>
+        </div>
+      </div>
+      <div class="touch-controls" role="group" aria-label="屏幕方向按钮，也可以用键盘">
+        <button class="direction up" type="button" data-direction="ArrowUp" aria-label="向上游">↑</button>
+        <button class="direction left" type="button" data-direction="ArrowLeft" aria-label="向左游">←</button>
+        <span class="direction-center" aria-hidden="true">✦</span>
+        <button class="direction right" type="button" data-direction="ArrowRight" aria-label="向右游">→</button>
+        <button class="direction down" type="button" data-direction="ArrowDown" aria-label="向下游">↓</button>
+      </div>
+    </section>
+    <footer class="page-footer">每一条大鱼，都是从小鱼慢慢长大的 <span aria-hidden="true">✦</span></footer>
+  </main>
+  <noscript><p class="noscript-warning">请在浏览器中开启 JavaScript 后再玩游戏。</p></noscript>
+</body>
+</html>
